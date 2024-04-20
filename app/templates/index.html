@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora y Árbol Sintáctico</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #58D68D;
+            text-align: center; /* Centrar el contenido */
+        }
+        .calculator {
+            width: 300px;
+            margin: 50px auto; /* Centrar el bloque */
+            border: 2px solid #000000;
+            border-radius: 10px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: inline-block; /* Alinear al centro */
+        }
+        .display {
+            width: calc(100% - 20px); /* Ajustar el ancho del display */
+            height: 60px;
+            font-size: 24px;
+            text-align: right;
+            padding: 10px;
+            border: 2px solid #000000;
+            border-radius: 5px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            margin-right: 5px; /* Alinear el margen derecho */
+            display: inline-block; /* Alinear al centro */
+            vertical-align: top; /* Alinear al tope */
+        }
+
+        .button {
+            width: 60px;
+            height: 60px;
+            font-size: 20px;
+            margin: 5px;
+            border: none;
+            cursor: pointer;
+            background-color: #cacaca;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .button.operation{
+            background-color: #f99500;
+        }
+
+        .button.operation2{
+            background-color: #f99500;
+            display:inline-table;
+        }
+
+        .button.operation3{
+            background-color: #f99500;
+            display:inline-block;
+        }
+
+        .button.operation:hover {
+            background-color: #c0c0c0;
+        }
+
+        .column {
+            display: inline-block; /* Alinear al centro */
+            vertical-align: top; /* Alinear al tope */
+        }
+        .result-table {
+            display: none;
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px; /* Espacio entre la calculadora y la tabla */
+        }
+        .result-table th, .result-table td {
+            border: 1px solid #000000;
+            padding: 8px;
+            text-align: left;
+        }
+        .result-table th {
+            background-color: #000000;
+        }
+
+        /* Estilos para el árbol */
+        #mynetwork {
+            width: 800px; /* Ajustar el ancho del contenedor */
+            height: 500px; /* Ajustar el alto del contenedor */
+            margin: 0 auto;
+            border: 1px solid #070000;
+        }
+        .tree-container {
+            display: none;
+            border: 2px solid #000000;
+            border-radius: 10px;
+            background-color: #efed79;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilo para el botón clearDisplay */
+        .button.operation3 {
+            background-color: red;
+        }
+
+        .button.operation4 {
+            background-color: rgb(4, 153, 13);
+        }
+
+        /* Estilo para el botón showTree */
+        .button.operation2 {
+            background-color: rgb(56, 149, 255);
+        }
+
+        /* Estilos para los nodos */
+        #mynetwork .node {
+            font-size: 70px; /* Ajustar el tamaño de la fuente de los nodos */
+            width: auto; /* Permitir que el ancho de los nodos se ajuste automáticamente */
+            padding: 20px; /* Aumentar el espacio alrededor de los nodos */
+            margin: 10px; /* Aumentar el margen entre los nodos */
+        }
+    </style>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display" id="display">0</div>
+        <button class="button" onclick="appendToDisplay('7')">7</button>
+        <button class="button" onclick="appendToDisplay('8')">8</button>
+        <button class="button" onclick="appendToDisplay('9')">9</button>
+        <button class="button operation" onclick="appendToDisplay('+')">+</button>
+        <br>
+        <button class="button" onclick="appendToDisplay('4')">4</button>
+        <button class="button" onclick="appendToDisplay('5')">5</button>
+        <button class="button" onclick="appendToDisplay('6')">6</button>
+        <button class="button operation" onclick="appendToDisplay('-')">-</button>
+        <br>
+        <button class="button" onclick="appendToDisplay('1')">1</button>
+        <button class="button" onclick="appendToDisplay('2')">2</button>
+        <button class="button" onclick="appendToDisplay('3')">3</button>
+        <button class="button operation" onclick="appendToDisplay('*')">*</button>
+        <br>
+        <button class="button operation" onclick="appendToDisplay('(')">(</button>
+        <button class="button operation" onclick="appendToDisplay(')')">)</button>
+        <button class="button" onclick="appendToDisplay('0')">0</button>
+        <button class="button operation" onclick="appendToDisplay('/')">/</button>
+        <button class="button operation3" onclick="clearDisplay()">C</button>
+        <button class="button operation3" onclick="deleteLastDigit()">DEL</button>
+        <br>
+        <button class="button operation4" onclick="calculate()">=</button>
+        <button class="button operation2" onclick="showTree()">Tree</button>
+    </div>
+
+    <div class="column">
+        <h3 id="lex-title" style="display: none;">Análisis Léxico:</h3>
+        <table class="result-table" id="lex-table" style="display: none;">
+            <tr>
+                <th>Tipo</th>
+                <th>Valor</th>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Contenedor para el árbol -->
+    <div class="tree-container" id="tree-container">
+        <h3>Árbol Sintáctico:</h3>
+        <div id="mynetwork"></div>
+    </div>
+
+    <script>
+        var expressionToTree = ''; // Variable global para almacenar la expresión para el árbol
+
+        function appendToDisplay(char) {
+            var display = document.getElementById('display');
+            if (display.textContent === '0' && char !== '.') {
+                display.textContent = char;
+            } else {
+                display.textContent += char;
+            }
+        }
+
+        function deleteLastDigit() {
+            var display = document.getElementById('display');
+            var currentExpression = display.textContent;
+            display.textContent = currentExpression.slice(0, -1);
+        }
+
+        function clearDisplay() {
+            var display = document.getElementById('display');
+            display.textContent = '0';
+            var lexTable = document.getElementById('lex-table');
+            lexTable.innerHTML = '';
+            document.getElementById('lex-title').style.display = 'none';
+            lexTable.style.display = 'none';
+            document.getElementById('tree-container').style.display = 'none'; // Ocultar el contenedor del árbol
+        }
+
+        function calculate() {
+            var display = document.getElementById('display');
+            var expression = display.textContent;
+            expressionToTree = expression; // Almacenar la expresión para el árbol
+
+            var result = eval(expression);
+            display.textContent = result; // Mostrar el resultado en el display
+
+            // Realizar el análisis léxico
+            var lexTable = document.getElementById('lex-table');
+            lexTable.style.display = 'table';
+            lexTable.innerHTML = '';
+            var tokens = lexer(expression);
+            for (var i = 0; i < tokens.length; i++) {
+                var row = lexTable.insertRow();
+                var typeCell = row.insertCell(0);
+                var valueCell = row.insertCell(1);
+                typeCell.textContent = tokens[i].type;
+                valueCell.textContent = tokens[i].value;
+            }
+
+            document.getElementById('lex-title').style.display = 'block';
+        }
+
+        function lexer(expression) {
+            var tokens = [];
+            var regex = /\d+|\+|\-|\*|\/|\(|\)/g;
+           
+            var match;
+            while (match = regex.exec(expression)) {
+                tokens.push({type: getType(match[0]), value: match[0]});
+            }
+            return tokens;
+        }
+
+        function getType(token) {
+            if (token.match(/^\d+$/)) {
+                return 'Número Entero';
+            } else if (token === '+') {
+                return 'Operador Suma';
+            } else if (token === '-') {
+                return 'Operador Resta';
+            } else if (token === '*') {
+                return 'Operador Multiplicación';
+            } else if (token === '/') {
+                return 'Operador División';
+            } else if (token === '(') {
+                return 'Paréntesis Izquierdo';
+            } else if (token === ')') {
+                return 'Paréntesis Derecho';
+            } else {
+                return 'Desconocido';
+            }
+        }
+
+        function showTree() {
+            try {
+                var syntaxTree = generateSyntaxTree(expressionToTree); // Utilizar la expresión almacenada para el árbol
+                console.log('Árbol Sintáctico:', syntaxTree);
+
+                var nodes = [];
+                var edges = [];
+                createNodes(syntaxTree, null, nodes, edges);
+
+                var container = document.getElementById('mynetwork');
+                var data = {
+                    nodes: nodes,
+                    edges: edges
+                };
+
+                var options = {
+                    layout: {
+                        hierarchical: {
+                            direction: 'UD', // Arriba hacia abajo
+                            sortMethod: 'directed'
+                        }
+                    }
+                };
+
+                var network = new vis.Network(container, data, options);
+
+                // Mostrar el contenedor del árbol
+                document.getElementById('tree-container').style.display = 'block';
+            } catch (error) {
+                console.error(error);
+                alert('Error al generar el árbol de expresión.');
+            }
+        }
+
+        function generateSyntaxTree(expression) {
+            var operators = ['+', '-', '*', '/'];
+            var stack = [];
+            var num = '';
+            var regex = /(\d+|\+|\-|\*|\/|\(|\))/g;
+            var match;
+
+            while ((match = regex.exec(expression)) !== null) {
+                var token = match[0];
+                if (operators.includes(token)) {
+                    // Es un operador, lo agregamos al stack
+                    stack.push({ value: token });
+                } else if (!isNaN(parseInt(token))) {
+                    // Es un número, lo agregamos al stack
+                    stack.push({ value: parseInt(token) });
+                }
+            }
+
+            // Construir el árbol sintáctico
+            var root = stack.pop(); // Tomamos el último elemento como raíz
+            buildTree(root, stack);
+
+            return root;
+        }
+
+        function buildTree(parent, stack) {
+            if (parent.value === undefined) return; // No hay nada que hacer si no hay valor
+
+            // El siguiente elemento en el stack es el hijo derecho
+            var right = stack.pop();
+            parent.right = right;
+            if (right && right.value && typeof right.value !== 'number') {
+                buildTree(right, stack);
+            }
+
+            // El siguiente elemento en el stack es el hijo izquierdo
+            var left = stack.pop();
+            parent.left = left;
+            if (left && left.value && typeof left.value !== 'number') {
+                buildTree(left, stack);
+            }
+        }
+
+        function createNodes(node, parentId, nodes, edges) {
+            if (!node) return;
+
+            var nodeId = nodes.length;
+            var label = typeof node.value === 'number' ? node.value.toString() : node.value;
+            nodes.push({ id: nodeId, label: label });
+
+            if (parentId !== null) {
+                edges.push({ from: parentId, to: nodeId });
+            }
+
+            if (node.left) {
+                createNodes(node.left, nodeId, nodes, edges);
+            }
+
+            if (node.right) {
+                createNodes(node.right, nodeId, nodes, edges);
+            }
+        }
+    </script>
+</body>
+</html>
